@@ -26,6 +26,50 @@ const loginFormSchema = yup
   })
   .required();
 
+const registerFormSchema = yup
+  .object({
+    username: yup
+      .string()
+      .required("Username is required")
+      .matches(/[A-Z]/, "Password must contain at least one uppercase letter")
+      .matches(/[a-z]/, "Password must contain at least one lowercase letter")
+      .matches(/\d/, "Password must contain at least one number")
+      .min(3, "Username must be at least 3 characters")
+      .max(30, "Username cannot exceed 20 characters"),
+    password: yup
+      .string()
+      .required("Password is required")
+      .min(8, "Password must be at least 8 characters")
+      .max(100, "Password cannot exceed 100 characters")
+      .matches(/[A-Z]/, "Password must contain at least one uppercase letter")
+      .matches(/[a-z]/, "Password must contain at least one lowercase letter")
+      .matches(/\d/, "Password must contain at least one number")
+      .matches(
+        /[!@#$%^&*(),.?":{}|<>]/,
+        "Password must contain at least one special character"
+      ),
+    confirmPassword: yup
+      .string()
+      .required("Password is required")
+      .min(8, "Password must be at least 8 characters")
+      .max(100, "Password cannot exceed 100 characters")
+      .matches(/[A-Z]/, "Password must contain at least one uppercase letter")
+      .matches(/[a-z]/, "Password must contain at least one lowercase letter")
+      .matches(/\d/, "Password must contain at least one number")
+      .matches(
+        /[!@#$%^&*(),.?":{}|<>]/,
+        "Confirm password must contain at least one special character"
+      ),
+    fullname: yup
+      .string()
+      .required("Fullname is required"),
+    phone: yup
+      .string()
+      .required("Phone is required")
+      .length(10, "Phone must be at least 10 characters")
+  })
+  .required();
+
 const driverFormSchema = yup
   .object({
     fullname: yup
@@ -101,12 +145,12 @@ const scheduleFormSchema = yup
     routeId: yup
       .string()
       .required("Route is required"),
-    date: yup
+    // date: yup
+    //   .string()
+    //   .required("Date is required"),
+    departureTime: yup
       .string()
-      .required("Date is required"),
-    time: yup
-      .string()
-      .required("Time is required"),
+      .required("Departure time is required"),
     vehicleIds: yup
       .array()
       .of(
@@ -140,12 +184,9 @@ const bookingFormSchema = yup
       .string()
       .length(10, "Phone must be at least 10 characters")
       .required("Phone number location is required"),
-    date: yup
+    bookingDate: yup
       .string()
-      .required("Date is required"),
-    time: yup
-      .string()
-      .required("Time is required"),
+      .required("Date is required")
   })
   .required();
 
@@ -160,6 +201,7 @@ const searchFormSchema = yup
 
 const schemas = {
   loginFormSchema,
+  registerFormSchema,
   driverFormSchema,
   searchFormSchema,
   vehicleFormSchema,

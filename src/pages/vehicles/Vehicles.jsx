@@ -22,6 +22,8 @@ function Vehicles() {
   const [drivers, setDrivers] = useState([]);
   const [open, setOpen] = useState(false);
   const [deleteVehicleId, setDeleteVehicleId] = useState(null);
+  const [filteredVehicles, setFilteredVehicles] = useState([]);
+
   const navigation = useNavigate();
   const fetchAllVehicles = useCallback(async () => {
     const res = await getAllVehiclesAPI();
@@ -30,6 +32,7 @@ function Vehicles() {
   const getVehicles = useCallback(async () => {
     const res = await fetchAllVehicles();
     setVehicles(res);
+    setFilteredVehicles(res);
   }, [fetchAllVehicles]);
   useEffect(() => {
     getVehicles();
@@ -54,7 +57,15 @@ function Vehicles() {
   };
 
   const handleSearch = (searchInput) => {
-    console.log("🚀 ~ handleSearch ~ searchInput:", searchInput);
+    const inputValue = searchInput.normalize("NFC");
+    if (inputValue === "") {
+      setFilteredVehicles(vehicles);
+      return;
+    }
+    const regex = new RegExp(inputValue, "iu");
+    setFilteredVehicles(
+      vehicles.filter((vehicle) => regex.test(vehicle?.brand?.normalize("NFC")))
+    );
   };
 
   return (
@@ -90,7 +101,7 @@ function Vehicles() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {vehicles?.map((vehicle, index) => {
+              {filteredVehicles?.map((vehicle, index) => {
                 return (
                   <TableRow key={index}>
                     <TableCell className='font-medium'>{index + 1}</TableCell>

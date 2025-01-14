@@ -16,37 +16,31 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-
 import { Input } from "@/components/ui/input";
 import schemas from "@/form/schemas";
-
 import { useToast } from "@/hooks/use-toast";
-import { CalendarIcon, Save } from "lucide-react";
+import { Save } from "lucide-react";
 import {
-  createScheduleAPI,
   getAllDriversAPI,
   getAllRoutesAPI,
   getAllVehiclesAPI,
+  getOneDriverByIdAPI,
+  getOneRouteByIdAPI,
+  getOneScheduleByIdAPI,
+  getOneVehicleByIdAPI,
+  updateScheduleAPI,
 } from "@/apis/apis";
 import { useCallback, useEffect, useState } from "react";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
-import { format } from "date-fns";
-import { getDateTime } from "@/utils/formatters";
 import { Checkbox } from "@/components/ui/checkbox";
 import AutoScrollArea from "@/components/appComponents/scrollArea/AutoScrollArea";
 import { isEmpty } from "lodash";
 import { useLocation } from "react-router-dom";
 
-function AddScheduleForm() {
+function EditScheduleForm() {
   const { toast } = useToast();
-  const location = useLocation()
-  const schedule = location.state.schedule
-  console.log('🚀 ~ AddScheduleForm ~ schedule:', schedule)
+  const location = useLocation();
+  const scheduleId = location.state.scheduleId;
+  const [schedule, setSchedule] = useState(null);
   const [data, setData] = useState({
     routes: [],
     drivers: [],
@@ -62,8 +56,8 @@ function AddScheduleForm() {
       ]);
       setData({
         routes,
-        drivers: drivers?.filter((driver) => driver.status === 0),
-        vehicles: vehicles?.filter((vehicle) => vehicle.status === 0),
+        drivers,
+        vehicles,
       });
     } catch (error) {
       console.error("Error fetching data:", error);
@@ -74,55 +68,118 @@ function AddScheduleForm() {
     fetchAllData();
   }, [fetchAllData]);
 
+  useEffect(() => {
+    const fetchSchedule = async () => {
+      const schedule = await getOneScheduleByIdAPI(scheduleId);
+      const route = await getOneRouteByIdAPI(schedule.routeId);
+      const routeName = `${route.startPoint} -> ${route.endPoint}`;
+
+      const drivers = schedule?.details?.map((detail) => {
+        const driver = data?.drivers?.find((d) => d._id === detail.driverId);
+        return driver;
+      });
+
+      const vehicles = schedule?.details?.map((detail) => {
+        const vehicle = data?.vehicles?.find((v) => v._id === detail.vehicleId);
+        return vehicle;
+      });
+      setSchedule({
+        ...schedule,
+        drivers,
+        vehicles,
+        routeName,
+      });
+    };
+
+    // Only fetch schedule when all data is available
+    if (
+      scheduleId &&
+      !isEmpty(data.drivers) &&
+      !isEmpty(data.routes) &&
+      !isEmpty(data.vehicles)
+    ) {
+      fetchSchedule();
+    }
+  }, [data, scheduleId]);
+
+  const refresh = async (data) => {
+    const drivers = await Promise.all(
+      data?.details?.map(async (detail) => {
+        const driver = await getOneDriverByIdAPI(detail.driverId);
+        return driver;
+      })
+    );
+
+    const vehicles = await Promise.all(
+      data?.details?.map(async (detail) => {
+        const vehicle = await getOneVehicleByIdAPI(detail.vehicleId);
+        return vehicle;
+      })
+    );
+
+    const route = await getOneRouteByIdAPI(data.routeId);
+
+    const updatedSchedule = {
+      ...data,
+      drivers,
+      vehicles,
+      routeName: `${route.startPoint} -> ${route.endPoint}`,
+    };
+    setSchedule(updatedSchedule);
+  };
+
   const form = useForm({
     resolver: yupResolver(schemas.scheduleFormSchema),
     defaultValues: {
-      routeId: schedule.routeId,
-      // date: schedule.departureTime.split(" ")[0],
-      // time: schedule.departureTime.split(" ")[0],
+      routeId: "",
+      departureTime: "",
       vehicleIds: [],
     },
   });
+
+  useEffect(() => {
+    if (schedule) {
+      form.reset({
+        routeId: schedule.routeId,
+        departureTime: schedule.departureTime,
+        vehicleIds: schedule.vehicles.map((vehicle) => vehicle._id),
+      });
+    }
+  }, [schedule, form]);
 
   const resetForm = () => {
     form.reset();
   };
 
   const onSubmit = async (formData) => {
-    formData.departureTime = getDateTime({
-      date: formData.date,
-      time: formData.time,
-    });
-    delete formData.date;
-    delete formData.time;
-    console.log("🚀 ~ onSubmit ~ formData:", formData);
     const details = formData.vehicleIds?.map((vehicleId) => {
-      const vehicle = data.vehicles.filter(
+      const vehicle = data.vehicles.find(
         (vehicle) => vehicle._id === vehicleId
       );
       const detail = {
         vehicleId,
-        driverId: vehicle[0].driverId,
-        capacity: vehicle[0].capacity,
-        availableSeat: vehicle[0].capacity,
+        driverId: vehicle.driverId,
+        capacity: vehicle.capacity,
+        availableSeat: vehicle.capacity,
       };
       return detail;
     });
     formData.details = details;
     delete formData.vehicleIds;
-    console.log("🚀 ~ details ~ details:", details);
-    const response = await createScheduleAPI(formData);
+
+    const response = await updateScheduleAPI(schedule._id, formData);
+    await refresh(response);
+
     if (response?.message) {
       toast({
         title: <h1 className='font-bold text-lg text-red-600'>Error</h1>,
         description: <h1 className='font-bold text-sm'>{response.message}</h1>,
       });
-      return;
     } else {
       toast({
-        title: "Add Schedule",
+        title: "Update Schedule",
         description: (
-          <h1 className='font-bold text-sm'>Schedule added successfully</h1>
+          <h1 className='font-bold text-sm'>Schedule updated successfully</h1>
         ),
       });
       resetForm();
@@ -171,66 +228,25 @@ function AddScheduleForm() {
             </FormItem>
           )}
         />
-        <div className='flex gap-8'>
-          <FormField
-            control={form.control}
-            name='date'
-            render={({ field }) => (
-              <FormItem className='flex flex-col gap-2.5'>
-                <FormLabel>Date</FormLabel>
-                <FormControl>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button variant={"outline"}>
-                        <CalendarIcon />
-                        {field.value ? (
-                          format(field.value, "PPP")
-                        ) : (
-                          <span>Pick a date</span>
-                        )}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className='w-auto p-0' align='start'>
-                      <Calendar
-                        mode='single'
-                        selected={field.value}
-                        onSelect={field.onChange}
-                        disabled={(date) =>
-                          // date < new Date() || date < new Date("1900-01-01")
-                          date < new Date("1900-01-01")
-                        }
-                        initialFocus
-                        {...field}
-                      />
-                    </PopoverContent>
-                  </Popover>
-                </FormControl>
-                <FormMessage>
-                  {form.formState.errors.departureTime?.message}
-                </FormMessage>
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name='time'
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Time</FormLabel>
-                <FormControl>
-                  <Input
-                    type='time'
-                    placeholder='Enter departure time'
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage>
-                  {form.formState.errors.departureTime?.message}
-                </FormMessage>
-              </FormItem>
-            )}
-          />
-        </div>
+        <FormField
+          control={form.control}
+          name='departureTime'
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Time</FormLabel>
+              <FormControl>
+                <Input
+                  type='time'
+                  placeholder='Enter departure time'
+                  {...field}
+                />
+              </FormControl>
+              <FormMessage>
+                {form.formState.errors.departureTime?.message}
+              </FormMessage>
+            </FormItem>
+          )}
+        />
         <FormField
           control={form.control}
           name='vehicleIds'
@@ -238,7 +254,7 @@ function AddScheduleForm() {
             <FormItem>
               <FormControl>
                 <AutoScrollArea
-                  title={"Select vehicles and drivers (inactive)"}
+                  title={"Select vehicles and drivers"}
                   quantityItem={data.vehicles.length}
                 >
                   {isEmpty(data?.vehicles) ? (
@@ -301,4 +317,4 @@ function AddScheduleForm() {
   );
 }
 
-export default AddScheduleForm;
+export default EditScheduleForm;

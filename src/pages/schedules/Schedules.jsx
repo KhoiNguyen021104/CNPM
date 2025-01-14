@@ -12,7 +12,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Edit, Plus, RefreshCcw, Trash } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { convertTime, formatDateTime, slugify } from "@/utils/formatters";
+import { convertTime, slugify } from "@/utils/formatters";
 import SearchComponent from "@/components/appComponents/search/SearchComponent";
 import {
   getAllSchedulesAPI,
@@ -126,7 +126,7 @@ function Schedules() {
                 <TableRow key={index}>
                   <TableCell className='font-medium'>{index + 1}</TableCell>
                   <TableCell>{schedule?.routeName}</TableCell>
-                  <TableCell>{formatDateTime(schedule.departureTime)}</TableCell>
+                  <TableCell>{schedule?.departureTime}</TableCell>
                   <TableCell>
                     <div className='grid grid-cols-4 gap-x-2'>
                       <div>
@@ -200,7 +200,7 @@ function Schedules() {
                             schedule?.routeName + " " + schedule?.departureTime
                           ),
                           {
-                            state: { schedule },
+                            state: { scheduleId: schedule._id },
                           }
                         )
                       }

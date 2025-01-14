@@ -22,7 +22,7 @@ function SearchComponent({ handleSearch }) {
     form.setValue("searchInput", "");
   };
 
-  const onSubmit = async (data) => {
+  const onSubmit = (data) => {
     handleSearch(data)
     resetForm();
   };
@@ -45,6 +45,10 @@ function SearchComponent({ handleSearch }) {
                     type='text'
                     placeholder='Search by name...'
                     {...field}
+                    onChange={(e) => {
+                      console.log('🚀 ~ SearchComponent ~ e.target.value:', e.target.value)
+                      handleSearch(e.target.value)
+                    }}
                   />
                 </FormControl>
                 <FormMessage>

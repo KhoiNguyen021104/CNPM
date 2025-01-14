@@ -14,12 +14,12 @@ import { Check, Edit, Plus, RefreshCcw, Trash } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { convertTime, formatDateTime, slugify } from "@/utils/formatters";
 import SearchComponent from "@/components/appComponents/search/SearchComponent";
-import DeleteVehicle from "./DeleteVehicle";
 import { getAllBookingsAPI, updateBookingAPI } from "@/apis/apis";
+import DeleteBooking from "./DeleteBooking";
 
 function Bookings() {
   const [bookings, setBookings] = useState([]);
-  console.log("🚀 ~ Bookings ~ bookings:", bookings);
+  const [filteredBookings, setFilteredBookings] = useState([]);
   const [open, setOpen] = useState(false);
   const [deleteBookingId, setDeleteBookingId] = useState(null);
   const navigation = useNavigate();
@@ -30,6 +30,7 @@ function Bookings() {
   const getBookings = useCallback(async () => {
     const res = await fetchAllBookings();
     setBookings(res);
+    setFilteredBookings(res);
   }, [fetchAllBookings]);
   useEffect(() => {
     getBookings();
@@ -45,7 +46,15 @@ function Bookings() {
   };
 
   const handleSearch = (searchInput) => {
-    console.log("🚀 ~ handleSearch ~ searchInput:", searchInput);
+    const inputValue = searchInput.normalize("NFC");
+    if (inputValue === "") {
+      setFilteredBookings(bookings);
+      return;
+    }
+    const regex = new RegExp(inputValue, "iu");
+    setFilteredBookings(
+      bookings.filter((booking) => regex.test(booking?.customerPhone?.normalize("NFC")))
+    );
   };
 
   return (
@@ -81,7 +90,7 @@ function Bookings() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {bookings?.map((booking, index) => {
+              {filteredBookings?.map((booking, index) => {
                 return (
                   <TableRow key={index}>
                     <TableCell className='font-medium'>{index + 1}</TableCell>
@@ -100,8 +109,8 @@ function Bookings() {
                     <TableCell className='flex gap-3'>
                       <Button
                         onClick={() =>
-                          navigation(slugify(booking?.licensePlate), {
-                            state: { booking },
+                          navigation(slugify(booking?.customerName), {
+                            state: { bookingId: booking._id },
                           })
                         }
                       >
@@ -127,7 +136,7 @@ function Bookings() {
         </div>
       </SidebarLayout>
       {open && (
-        <DeleteVehicle
+        <DeleteBooking
           open={open}
           setOpen={setOpen}
           deleteBookingId={deleteBookingId}

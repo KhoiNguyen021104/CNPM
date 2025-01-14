@@ -6,10 +6,9 @@ export const loginAPI = async (data) => {
   return (await authorizedAxiosInstance.post(`${API_ROOT}/v1/users/login`, data)).data
 }
 
-// export const createNewUserAPI = async (createData) => {
-//   const response = await axios.post(`${API_ROOT}/v1/register`, createData)
-//   return response.data
-// }
+export const registerAPI = async (user) => {
+  return (await authorizedAxiosInstance.post(`${API_ROOT}/v1/users/register`, user)).data
+}
 
 export const logoutAPI = async () => {
   return (await authorizedAxiosInstance.delete(`${API_ROOT}/v1/users/logout`)).data

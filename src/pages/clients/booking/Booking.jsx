@@ -47,7 +47,6 @@ function AddBookingForm() {
   };
 
   const onSubmit = async (formData) => {
-    console.log("🚀 ~ onSubmit ~ formData:", formData);
     formData.bookingDate = formData.time + " " + formData.date;
     delete formData.date;
     delete formData.time;
