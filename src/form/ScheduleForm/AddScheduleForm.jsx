@@ -21,7 +21,7 @@ import { Input } from "@/components/ui/input";
 import schemas from "@/form/schemas";
 
 import { useToast } from "@/hooks/use-toast";
-import { CalendarIcon, Save } from "lucide-react";
+import { Save } from "lucide-react";
 import {
   createScheduleAPI,
   getAllDriversAPI,
@@ -29,14 +29,7 @@ import {
   getAllVehiclesAPI,
 } from "@/apis/apis";
 import { useCallback, useEffect, useState } from "react";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
-import { format } from "date-fns";
-import { getDateTime } from "@/utils/formatters";
+
 import { Checkbox } from "@/components/ui/checkbox";
 import AutoScrollArea from "@/components/appComponents/scrollArea/AutoScrollArea";
 import { isEmpty } from "lodash";
@@ -74,8 +67,7 @@ function AddScheduleForm() {
     resolver: yupResolver(schemas.scheduleFormSchema),
     defaultValues: {
       routeId: "",
-      date: "",
-      time: "",
+      departureTime: "",
       vehicleIds: [],
     },
   });
@@ -85,14 +77,7 @@ function AddScheduleForm() {
   };
 
   const onSubmit = async (formData) => {
-    formData.departureTime = getDateTime({
-      date: formData.date,
-      time: formData.time,
-    });
-    formData.departureTime = formData.date + ' ' + formData.time
-    delete formData.date;
     delete formData.time;
-    console.log("🚀 ~ onSubmit ~ formData:", formData);
     const details = formData.vehicleIds?.map((vehicleId) => {
       const vehicle = data.vehicles.filter(
         (vehicle) => vehicle._id === vehicleId
@@ -107,7 +92,6 @@ function AddScheduleForm() {
     });
     formData.details = details;
     delete formData.vehicleIds;
-    console.log("🚀 ~ details ~ details:", details);
     const response = await createScheduleAPI(formData);
     if (response?.message) {
       toast({
@@ -168,49 +152,9 @@ function AddScheduleForm() {
             </FormItem>
           )}
         />
-        <div className='flex gap-8'>
           <FormField
             control={form.control}
-            name='date'
-            render={({ field }) => (
-              <FormItem className='flex flex-col gap-2.5'>
-                <FormLabel>Date</FormLabel>
-                <FormControl>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button variant={"outline"}>
-                        <CalendarIcon />
-                        {field.value ? (
-                          format(field.value, "PPP")
-                        ) : (
-                          <span>Pick a date</span>
-                        )}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className='w-auto p-0' align='start'>
-                      <Calendar
-                        mode='single'
-                        selected={field.value}
-                        onSelect={field.onChange}
-                        disabled={(date) =>
-                          // date < new Date() || date < new Date("1900-01-01")
-                          date < new Date("1900-01-01")
-                        }
-                        initialFocus
-                        {...field}
-                      />
-                    </PopoverContent>
-                  </Popover>
-                </FormControl>
-                <FormMessage>
-                  {form.formState.errors.departureTime?.message}
-                </FormMessage>
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name='time'
+            name='departureTime'
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Time</FormLabel>
@@ -227,7 +171,6 @@ function AddScheduleForm() {
               </FormItem>
             )}
           />
-        </div>
         <FormField
           control={form.control}
           name='vehicleIds'
@@ -285,7 +228,6 @@ function AddScheduleForm() {
             </FormItem>
           )}
         />
-
         <Button type='submit'>
           <Save width={20} height={20} /> Save
         </Button>

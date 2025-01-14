@@ -16,19 +16,24 @@ import { useState } from "react";
 import schemas from "@/form/schemas";
 
 import { useToast } from "@/hooks/use-toast";
-import { USERS } from "@/apis/mock";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { loginAPI } from "@/apis/apis";
 
 function LoginForm() {
   const [showPassword, setShowPassword] = useState(false);
   const { toast } = useToast();
   const navigation = useNavigate();
+  const location = useLocation();
+  const userInfo = location.state?.userInfo;
+  if (userInfo) {
+    navigation(location.pathname, { replace: true });
+  }
+
   const form = useForm({
     resolver: yupResolver(schemas.loginFormSchema),
     defaultValues: {
-      username: USERS[0].username,
-      password: USERS[0].password,
+      username: userInfo?.username || "",
+      password: userInfo?.password || "",
     },
   });
   const onSubmit = async (data) => {
@@ -99,7 +104,7 @@ function LoginForm() {
                     type={showPassword ? "text" : "password"}
                     placeholder='Enter your password'
                     {...field}
-                    value={field.value || USERS[0].username}
+                    value={field.value || ""}
                   />
                   <button
                     type='button'
@@ -125,7 +130,7 @@ function LoginForm() {
             <a
               className='font-semibold ml-1'
               style={{ color: "#0652DD" }}
-              href='/'
+              href='/register'
             >
               Register
             </a>

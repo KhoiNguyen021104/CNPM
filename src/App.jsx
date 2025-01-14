@@ -17,6 +17,9 @@ import EditSchedule from "./pages/schedules/EditSchedule";
 import Bookings from "./pages/bookings/Bookings";
 import AddBookingForm from "./pages/clients/booking/Booking";
 import AddBooking from "./pages/bookings/AddBooking";
+import EditBooking from "./pages/bookings/EditBooking";
+import Static from "./pages/statistic/Static";
+import Register from "./pages/auth/register/Register";
 
 function App() {
   return (
@@ -24,6 +27,7 @@ function App() {
       <ReactRoutes>
         <Route path='/' element={<Login />} />
         <Route path='/login' element={<Login />} />
+        <Route path='/register' element={<Register />} />
         <Route path='/dashboard' element={<Dashboard />} />
         <Route path='/drivers'>
           <Route path='' element={<Drivers />} />
@@ -48,7 +52,12 @@ function App() {
         <Route path='/bookings'>
           <Route path='' element={<Bookings />} />
           <Route path='add' element={<AddBooking />} />
-          {/* <Route path=':_id' element={<EditRoute />} /> */}
+          <Route path=':_id' element={<EditBooking />} />
+        </Route>
+        <Route path='/static'>
+          <Route path='' element={<Static />} />
+          {/* <Route path='add' element={<AddBooking />} /> */}
+          {/* <Route path=':_id' element={<EditBooking />} /> */}
         </Route>
         <Route path='/booking'>
           <Route path='' element={<AddBookingForm />} />

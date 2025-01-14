@@ -16,9 +16,10 @@ import schemas from "@/form/schemas";
 import { useToast } from "@/hooks/use-toast";
 import { CalendarIcon, Save } from "lucide-react";
 import {
-  createBookingAPI,
   getAllSchedulesAPI,
+  getOneBookingByIdAPI,
   getOneRouteByIdAPI,
+  updateBookingAPI,
 } from "@/apis/apis";
 import {
   Popover,
@@ -35,8 +36,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-function AddBookingForm() {
+import { useLocation } from "react-router-dom";
+function EditBookingForm() {
   const { toast } = useToast();
+  const location = useLocation();
+  const bookingId = location.state.bookingId;
+  const [booking, setBooking] = useState(null);
   const [schedules, setSchedules] = useState([]);
   useEffect(() => {
     const fetchAllSchedules = async () => {
@@ -59,8 +64,18 @@ function AddBookingForm() {
   }, []);
 
   useEffect(() => {
-    // console.log("🚀 ~ AddBookingForm ~ schedules:", schedules);
+    // console.log("🚀 ~ EditBookingForm ~ schedules:", schedules);
   }, [schedules]);
+
+  useEffect(() => {
+    if (bookingId) {
+      const fetchBooking = async () => {
+        const res = await getOneBookingByIdAPI(bookingId);
+        setBooking(res);
+      };
+      fetchBooking();
+    }
+  }, [bookingId]);
 
   const form = useForm({
     resolver: yupResolver(schemas.bookingFormSchema),
@@ -74,12 +89,27 @@ function AddBookingForm() {
     },
   });
 
+  useEffect(() => {
+    if (booking && schedules) {
+      form.reset({
+        scheduleId: booking.scheduleId,
+        pickUpLocation: booking.pickUpLocation,
+        dropOffLocation: booking.dropOffLocation,
+        customerName: booking.customerName,
+        customerPhone: booking.customerPhone,
+        bookingDate: booking.bookingDate,
+      });
+    }
+  }, [booking, form, schedules]);
+
   const resetForm = () => {
     form.reset();
   };
 
   const onSubmit = async (formData) => {
-    const response = await createBookingAPI(formData);
+    console.log('🚀 ~ onSubmit ~ formData:', formData)
+    const response = await updateBookingAPI(bookingId, formData);
+    setBooking(response)
     if (response?.message) {
       toast({
         title: <h1 className='font-bold text-lg text-red-600'>Error</h1>,
@@ -88,9 +118,9 @@ function AddBookingForm() {
       return;
     } else {
       toast({
-        title: "Add Booking",
+        title: "Update Booking",
         description: (
-          <h1 className='font-bold text-sm'>Booking added successfully</h1>
+          <h1 className='font-bold text-sm'>Booking updated successfully</h1>
         ),
       });
       resetForm();
@@ -109,8 +139,8 @@ function AddBookingForm() {
               <FormControl>
                 <Select
                   {...field}
+                  value={field.value}
                   onValueChange={field.onChange}
-                  defaultValue={field.value}
                 >
                   <SelectTrigger className='w-full'>
                     <SelectValue placeholder='Select a schedule' />
@@ -130,6 +160,7 @@ function AddBookingForm() {
             </FormItem>
           )}
         />
+
         <FormField
           control={form.control}
           name='bookingDate'
@@ -137,36 +168,10 @@ function AddBookingForm() {
             <FormItem className='flex flex-col gap-2.5'>
               <FormLabel>Date</FormLabel>
               <FormControl>
-                {/* <Popover>
+                <Popover>
                   <PopoverTrigger asChild>
                     <Button variant={"outline"}>
                       <CalendarIcon />
-                      {field.value ? (
-                        format(field.value, "PPP")
-                      ) : (
-                        <span>Pick a date</span>
-                      )}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className='w-auto p-0' align='start'>
-                    <Calendar
-                      mode='single'
-                      selected={field.value}
-                      onSelect={field.onChange}
-                      disabled={(date) =>
-                        // date < new Date() || date < new Date("1900-01-01")
-                        date < new Date("1900-01-01")
-                      }
-                      initialFocus
-                      {...field}
-                    />
-                  </PopoverContent>
-                </Popover> */}
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant={"outline"}
-                      >
                       {field.value ? (
                         format(field.value, "PPP")
                       ) : (
@@ -276,4 +281,4 @@ function AddBookingForm() {
   );
 }
 
-export default AddBookingForm;
+export default EditBookingForm;

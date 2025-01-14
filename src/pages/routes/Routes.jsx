@@ -40,8 +40,6 @@ function Routes() {
     getRoutes();
   };
 
-  useEffect(() => {}, [routes]);
-
   const handleSearch = (searchInput) => {
     console.log("🚀 ~ handleSearch ~ searchInput:", searchInput);
   };

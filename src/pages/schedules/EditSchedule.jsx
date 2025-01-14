@@ -10,7 +10,7 @@ function EditSchedule() {
     <SidebarLayout>
       <h1 className='font-bold text-2xl text-center'>Edit schedule</h1>
       <div className='flex gap-4'>
-        <Button onClick={() => navigation("/vehicles")}>
+        <Button onClick={() => navigation("/schedules")}>
           <ArrowLeft width={20} height={20} />
           Back
         </Button>
